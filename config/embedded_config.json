@@ -1,0 +1,29 @@
+{
+  "camera": {
+    "type": "usb",
+    "device_id": 0,
+    "resolution": [
+      1280,
+      720
+    ],
+    "fps": 30
+  },
+  "ai_model": {
+    "type": "lightweight",
+    "ocr_engine": "tesseract",
+    "confidence_threshold": 0.7
+  },
+  "storage": {
+    "type": "file",
+    "path": "./plate_events",
+    "max_events": 1000
+  },
+  "network": {
+    "endpoint": "https://your-api-endpoint.com/plate-events",
+    "timeout": 5,
+    "retry_attempts": 3,
+    "batch_size": 10
+  },
+  "capture_interval": 1.0,
+  "log_level": "INFO"
+}

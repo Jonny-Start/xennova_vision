@@ -1,0 +1,38 @@
+# INSTRUCCIONES DE INSTALACIÓN
+
+Para sistemas embebidos:
+pip install -r requirements/embedded.txt
+
+Para sistemas desktop:
+pip install -r requirements/desktop.txt
+
+EJECUCIÓN:
+python main.py
+
+El sistema detectará automáticamente el hardware y cargará la configuración apropiada.
+
+
+
+
+🚀 AHORA TIENES UN SISTEMA COMPLETO CON:
+- Logging avanzado con archivos y consola
+- Manejo robusto de excepciones
+- Múltiples adaptadores de cámara (USB, CSI, IP)
+- Múltiples motores de IA (Tesseract, EasyOCR, YOLO, OpenALPR)
+- Múltiples sistemas de almacenamiento (JSON, SQLite, PostgreSQL, Redis)
+- Arquitectura SOLID completa
+- Detección automática de hardware
+
+
+# pip3 install -r requirements.txt
+
+
+
+# Opción 1: Con virtual environment (recomendado)
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python setup.py
+
+
+# python main.py --image ./img/test/testPlaca.jpg 

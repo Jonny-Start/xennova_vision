@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  plate-recognition:
+    build: .
+    container_name: plate-recognition-system
+    volumes:
+      - ./config:/app/config
+      - ./plate_events:/app/plate_events
+      - /dev/video0:/dev/video0  # Mapear cámara USB
+    devices:
+      - /dev/video0:/dev/video0
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    
+  # Opcional: Base de datos para almacenamiento
+  postgres:
+    image: postgres:13
+    container_name: plate-db
+    environment:
+      POSTGRES_DB: plate_events
+      POSTGRES_USER: plate_user
+      POSTGRES_PASSWORD: plate_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgres_data:
