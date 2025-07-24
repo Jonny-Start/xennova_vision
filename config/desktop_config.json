@@ -2,17 +2,14 @@
   "camera": {
     "type": "usb",
     "device_id": 0,
-    "resolution": [
-      1920,
-      1080
-    ],
+    "resolution": [1280, 720],
     "fps": 30
   },
   "ai_model": {
     "type": "advanced",
     "ocr_engine": "easyocr",
     "yolo_model": "yolov8n.pt",
-    "confidence_threshold": 0.8
+    "confidence_threshold": 0.9
   },
   "storage": {
     "type": "sqlite",
@@ -24,6 +21,6 @@
     "timeout": 30,
     "retry_attempts": 3
   },
-  "capture_interval": 0.5,
+  "capture_interval": 0.1,
   "log_level": "DEBUG"
 }
