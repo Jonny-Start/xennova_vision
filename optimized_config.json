@@ -1,0 +1,55 @@
+{
+  "camera": {
+    "type": "usb",
+    "device_id": 0,
+    "backup_devices": [1, 2],
+    "resolution": [1280, 720],
+    "fps": 30,
+    "auto_detect": true,
+    "available_cameras": {
+      "usb_primary": {"type": "usb", "device_id": 0},
+      "usb_secondary": {"type": "usb", "device_id": 1},
+      "webcam": {"type": "usb", "device_id": 2},
+      "ip_camera": {
+        "type": "ip", 
+        "url": "http://192.168.1.100:8080/video",
+        "username": "",
+        "password": ""
+      },
+      "mock_for_testing": {"type": "mock"}
+    }
+  },
+  "ai_model": {
+    "type": "smart",
+    "detector_mode": "smart",
+    "ocr_engine": "dual",
+    "confidence_threshold": 0.85,
+    "min_confirmations": 3,
+    "yolo_model": "yolov8n.pt",
+    "enable_cache": true,
+    "fast_mode": false
+  },
+  "storage": {
+    "type": "sqlite",
+    "database_path": "./plate_events.db",
+    "max_events": 10000
+  },
+  "network": {
+    "endpoint": "http://localhost:3000/api/placa",
+    "timeout": 15,
+    "retry_attempts": 3
+  },
+  "performance": {
+    "capture_interval": 0.1,
+    "processing_threads": 2,
+    "skip_similar_frames": true,
+    "frame_buffer_size": 5
+  },
+  "display": {
+    "show_window": true,
+    "window_size": [800, 600],
+    "show_confidence": true,
+    "show_processing_time": true
+  },
+  "log_level": "INFO"
+}
