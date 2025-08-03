@@ -1,5 +1,5 @@
 """
-Sistema principal de reconocimiento de placas - ULTRA MEJORADO
+Sistema principal de reconocimiento de placas
 """
 
 import argparse
@@ -8,11 +8,10 @@ import time
 from pathlib import Path
 import cv2
 import numpy as np
-import threading
 from queue import Queue
 
 from config.settings import ConfigManager
-from services import UltraServiceFactory  # ← CORREGIDO: Usar UltraServiceFactory
+from services import UltraServiceFactory
 from core.models import SystemStatus
 from utils.logger import get_logger
 from utils.hardware_detector import HardwareDetector

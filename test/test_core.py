@@ -7,7 +7,6 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.models import PlateEvent, DetectionResult
-from services.plate_detector import LightweightPlateDetector
 from utils.hardware_detector import HardwareDetector
 
 class TestPlateEvent(unittest.TestCase):

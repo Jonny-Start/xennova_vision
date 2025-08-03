@@ -12,8 +12,8 @@ import requests
 
 from core.interfaces import ICameraService, IPlateDetector, IEventStorage, INetworkService
 from utils.logger import get_logger
-from .ultra_camera_service import UltraCameraService
-from .ultra_smart_detector import UltraSmartDetector
+from .camera_service import UltraCameraService
+from .detector_service import UltraSmartDetector
 
 logger = get_logger(__name__)
 

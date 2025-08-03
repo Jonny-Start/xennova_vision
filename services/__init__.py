@@ -1,9 +1,9 @@
 from core.interfaces import ICameraService, IPlateDetector, IEventStorage, INetworkService
 
 # Importar servicios ultra-optimizados
-from .ultra_smart_detector import UltraSmartDetector
-from .ultra_camera_service import UltraCameraService
-from .ultra_service_factory import UltraServiceFactory  # ← AGREGADO
+from .detector_service import UltraSmartDetector
+from .camera_service import UltraCameraService
+from .factory_service import UltraServiceFactory
 
 # Legacy services for compatibility
 SmartPlateDetector = None
