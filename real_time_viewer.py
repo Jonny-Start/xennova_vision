@@ -3,7 +3,7 @@ import time
 import threading
 from typing import Dict, Any, Optional
 import numpy as np
-from services.ultra_service_factory import UltraServiceFactory
+from services.factory_service import UltraServiceFactory
 
 class UltraRealTimeViewer:
     """

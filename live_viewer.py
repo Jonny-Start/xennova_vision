@@ -13,7 +13,7 @@ import time
 from typing import Dict, Any, List, Optional
 import argparse
 
-from services.ultra_service_factory import UltraServiceFactory
+from services.factory_service import UltraServiceFactory
 from core.models import PlateDetection
 from utils.logger import get_logger
 

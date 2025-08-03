@@ -11,6 +11,10 @@
 # python main.py --continuous
 
 
+# python main.py --continuous --window  # Modo continuo con ventana
+# python main.py --image imagen.jpg     # Procesar imagen específica
+# python main.py --sync                 # Sincronizar eventos
+
 
 Para sistemas embebidos:
 pip install -r requirements/embedded.txt
