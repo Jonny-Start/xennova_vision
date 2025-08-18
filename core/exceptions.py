@@ -70,3 +70,11 @@ class ProcessingError(PlateSystemError):
         self.stage = stage
         error_code = f"PROC_{stage}" if stage else "PROC"
         super().__init__(message, error_code)
+
+class XennovaVisionError(PlateSystemError):
+    """Excepción específica para errores del sistema Xennova Vision"""
+    
+    def __init__(self, message: str, component: str = None):
+        self.component = component
+        error_code = f"XENNOVA_{component}" if component else "XENNOVA"
+        super().__init__(message, error_code)

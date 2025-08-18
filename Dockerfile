@@ -2,16 +2,16 @@
 FROM python:3.9-slim
 
 # Instalar dependencias del sistema
-RUN apt-get update && apt-get install -y \\
-    tesseract-ocr \\
-    tesseract-ocr-spa \\
-    libopencv-dev \\
-    libglib2.0-0 \\
-    libsm6 \\
-    libxext6 \\
-    libxrender-dev \\
-    libgomp1 \\
-    libgstreamer1.0-0 \\
+RUN apt-get update && apt-get install -y \
+    tesseract-ocr \
+    tesseract-ocr-spa \
+    libopencv-dev \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
+    libgstreamer1.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 # Crear directorio de trabajo

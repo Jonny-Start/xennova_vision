@@ -1,8 +1,13 @@
 │ XENNOVA VISION ALPR SYSTEM │
 
+# CREACION DE IMAGENES DOCKER
+# docker build -t xennova_vision .
+
 # INSTRUCCIONES DE INSTALACIÓN
 
 # INSTRUCCIONES PARA SISTEMAS EMBEBIDOS (Raspberry Pi, Jetson, etc.)
+
+# deactivate
 
 # python3 -m venv venv
 # source venv/bin/activate
