@@ -1,19 +1,32 @@
+│ XENNOVA VISION ALPR SYSTEM │
+
 # INSTRUCCIONES DE INSTALACIÓN
 
-# pip3 install -r requirements.txtbrew install python3
-# python3 -m ensurepip --upgrade
-# python3 main.py --continuous
-
+# INSTRUCCIONES PARA SISTEMAS EMBEBIDOS (Raspberry Pi, Jetson, etc.)
 
 # python3 -m venv venv
 # source venv/bin/activate
-# pip install -r requirements.txt
+# pip install -r ./requirements/desktop.txt
 # python main.py --continuous
 
 
 # python main.py --continuous --window  # Modo continuo con ventana
 # python main.py --image imagen.jpg     # Procesar imagen específica
 # python main.py --sync                 # Sincronizar eventos
+
+
+# Verificar estado
+# python main.py --status
+# # Probar reconocimiento
+# python main.py --continuous --window
+
+
+# Con imagen específica
+# python main.py --image foto_placa.jpg --window
+# # Modo continuo con visualización mejorada
+# python main.py --continuous --window
+
+
 
 
 Para sistemas embebidos:
@@ -52,3 +65,81 @@ python setup.py
 
 
 # python main.py --image ./img/test/testPlaca.jpg 
+
+
+# Crear análisis completo del proyecto
+analysis_report = '''# 📋 ANÁLISIS COMPLETO - SISTEMA DE RECONOCIMIENTO DE PLACAS
+
+## 🚨 PROBLEMAS CRÍTICOS ENCONTRADOS
+
+### 1. **main.py - ERRORES DE SINTAXIS**
+- ❌ **PROBLEMA:** Todos los métodos de la clase tienen indentación incorrecta
+- 🔧 **SOLUCIÓN:** Archivo `main_fixed.py` con indentación corregida
+- ⚠️ **IMPACTO:** El sistema NO puede ejecutarse con el main.py actual
+
+### 2. **PREVISUALIZACIÓN SIN RANGO DE EVALUACIÓN**
+- ❌ **PROBLEMA:** Solo muestra placas detectadas, no las áreas que está analizando
+- 🔧 **SOLUCIÓN:** Agregado visualización de regiones candidatas en AZUL
+- ✅ **MEJORA:** Ahora muestra:
+  - 🔍 AZUL: Áreas que está analizando  
+  - ✅ VERDE: Placas confirmadas (>80% confianza)
+  - ⚠️ AMARILLO: Placas candidatas (60-80% confianza)
+
+### 3. **ARCHIVOS REDUNDANTES Y NO UTILIZADOS**
+- ❌ **PROBLEMA:** 7+ archivos no utilizados ocupando espacio
+- 🔧 **SOLUCIÓN:** Scripts de limpieza automática creados
+
+## 📁 ARCHIVOS PARA ELIMINAR
+
+### **Definitivamente No Utilizados:**
+1. `camera_service.py.old` - Archivo de respaldo
+2. `live_viewer.py` - Visualizador alternativo no funcional
+3. `real_time_viewer.py` - Visualizador redundante
+4. `test_core.py` - Pruebas no funcionales
+5. `adapters/ai_adapters.py` - No importado en ningún lugar
+6. `adapters/storage_adapters.py` - No utilizado  
+7. `adapters/camera_adapters.py` - No utilizado
+
+### **Posiblemente No Utilizados:**
+- `network_service.py` - Redundante con UltraNetworkService
+- `event_manager.py` - No veo uso en main.py
+- Algunos `__init__.py` - Pueden ser innecesarios
+
+## 🔧 SOLUCIONES IMPLEMENTADAS
+
+### **1. main_fixed.py**
+- ✅ Indentación corregida en todos los métodos
+- ✅ Visualización mejorada con áreas de análisis
+- ✅ Leyenda de colores para usuario
+- ✅ Mejor información en tiempo real
+
+### **2. Scripts de Limpieza**
+- `cleanup_unused_files.sh` - Para Linux/Mac
+- `cleanup_unused_files.py` - Para Windows
+- ✅ Crea backup antes de eliminar
+- ✅ Reemplaza main.py automáticamente
+
+## ⚡ MEJORAS EN LA VISUALIZACIÓN
+
+### **Antes:**
+- Solo rectángulos verdes en placas detectadas
+- No se veía qué estaba analizando el sistema
+- Información limitada en pantalla
+
+### **Después:**
+- 🔍 **AZUL:** Regiones que está analizando actualmente
+- ✅ **VERDE:** Placas confirmadas (alta confianza)
+- ⚠️ **AMARILLO:** Placas candidatas (media confianza)
+- ❌ **ROJO:** Placas de baja confianza
+- 📊 **Leyenda y estadísticas** en tiempo real
+
+## 🚀 PASOS PARA IMPLEMENTAR
+
+### **Paso 1: Ejecutar Limpieza**
+```bash
+# Linux/Mac
+chmod +x cleanup_unused_files.sh
+./cleanup_unused_files.sh
+
+# Windows
+python cleanup_unused_files.py
