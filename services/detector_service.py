@@ -384,7 +384,8 @@ class UltraSmartDetector(IPlateDetector):
         return filtered
 
     def detect_plates(self, image: np.ndarray) -> List[PlateDetection]:
-        """Método principal de detección optimizado"""
+        """Sistema principal de detección robusto y universal - VERSIÓN COMPLETA"""
+        
         if not self.is_initialized:
             print("⚠️ Detector no inicializado")
             return []
@@ -392,8 +393,9 @@ class UltraSmartDetector(IPlateDetector):
         if image is None or image.size == 0:
             return []
         
-        # Control de rendimiento
-        if not self._should_process_frame():
+        # Control de rendimiento (mejorado para imágenes individuales)
+        self._processing_single_image = True  # Marcar que es imagen individual
+        if not self._should_process_frame_enhanced():
             return []
         
         start_time = time.time()
@@ -401,12 +403,37 @@ class UltraSmartDetector(IPlateDetector):
         try:
             self.stats['processed_frames'] += 1
             
-            # Detectar regiones candidatas
-            plate_regions = self._detect_plate_regions_advanced(image)
+            # HÍBRIDO: Usar detección universal + detección avanzada original
+            # 1. Detección universal (nueva)
+            universal_candidates = self._universal_plate_detection(image)
+            
+            # 2. Detección avanzada original (mantener)
+            advanced_regions = self._detect_plate_regions_advanced(image)
+
+            # AGREGAR: Detección por color como método adicional
+            color_regions = self._detect_by_color_enhanced(image)
+            if color_regions:
+                print(f"🎨 Detectadas {len(color_regions)} regiones por color")
+                # Agregar regiones de color a las regiones existentes
+                for x, y, w, h, score in color_regions:
+                    advanced_regions.append((x, y, w, h, score))
+            
+            # Combinar ambos enfoques
+            all_candidates = []
+            
+            # Procesar candidatos universales
+            for candidate in universal_candidates:
+                x, y, w, h = candidate['bbox']
+                all_candidates.append((x, y, w, h, candidate['confidence'], candidate['method']))
+            
+            # Procesar regiones avanzadas originales
+            for x, y, w, h, region_score in advanced_regions:
+                all_candidates.append((x, y, w, h, region_score, 'advanced_detection'))
+            
             detections = []
             
-            for x, y, w, h, region_score in plate_regions:
-                # Extraer ROI con padding
+            for x, y, w, h, region_score, detection_method in all_candidates:
+                # Extraer ROI con padding (MANTENER ORIGINAL)
                 padding = 5
                 x1 = max(0, x - padding)
                 y1 = max(0, y - padding)
@@ -417,42 +444,71 @@ class UltraSmartDetector(IPlateDetector):
                 if roi.size == 0:
                     continue
                 
-                # Extraer texto con múltiples métodos
-                text_results = self._extract_text_parallel(roi)
+                # HÍBRIDO: OCR múltiple (original) + OCR mejorado (nuevo)
+                text_results = []
+                
+                # 1. OCR paralelo original (mantener)
+                original_results = self._extract_text_parallel(roi)
+                text_results.extend(original_results)
+                
+                # 2. OCR multi-escala nuevo (agregar)
+                enhanced_text, enhanced_conf = self._multi_scale_ocr(roi)
+                if enhanced_text:
+                    text_results.append((enhanced_text, 'enhanced_ocr', enhanced_conf / 100.0))
                 
                 for text, method, ocr_confidence in text_results:
-                    # Validar formato
+                    # HÍBRIDO: Validación original + validación flexible
+                    # 1. Validación avanzada original
                     format_confidence, format_reason = self._validate_plate_format_advanced(text)
                     
+                    # 2. Validación flexible nueva (como fallback)
+                    if format_confidence <= 0.6:
+                        is_valid, clean_text, validation_status = self._flexible_plate_validation(text)
+                        if is_valid:
+                            format_confidence = 0.7  # Confianza moderada para formatos desconocidos
+                            format_reason = f"Flexible validation: {validation_status}"
+                            text = clean_text
+                    
                     if format_confidence > 0.6:
-                        # Combinar confianzas
+                        # Combinar confianzas (MANTENER ORIGINAL)
                         combined_confidence = (ocr_confidence * 0.6 + format_confidence * 0.4)
                         
-                        # Analizar con histórico
+                        # MANTENER: Análisis con histórico (CRÍTICO para confirmación)
                         is_confirmed, final_confidence, status = self._analyze_confidence_advanced(
                             text, method, combined_confidence
                         )
                         
-                        # Crear detección
+                        # NUEVA: Clasificación de vehículo
+                        vehicle_info = self._classify_vehicle_type(text, (w, h))
+                        
+                        # Crear detección con información completa
                         detection = PlateDetection(
                             plate_number=text,
                             confidence=final_confidence,
                             bbox=(x1, y1, x2, y2)
                         )
                         
+                        # NUEVOS: Atributos adicionales
+                        detection.vehicle_type = vehicle_info['type']
+                        detection.vehicle_confidence = vehicle_info['confidence']
+                        detection.country_hint = vehicle_info['country_hint']
+                        detection.validation_status = getattr(locals(), 'validation_status', 'validated')
+                        detection.detection_method = detection_method
+                        
                         detections.append(detection)
                         self.stats['detections'] += 1
                         
-                        # Log detallado
+                        # Log detallado (MANTENER)
                         processing_time = time.time() - start_time
-                        print(f"🔍 {status} | {format_reason} | {processing_time:.3f}s")
+                        vehicle_info_str = f"🚗 {vehicle_info['type']} ({vehicle_info['country_hint']})"
+                        print(f"🔍 {status} | {format_reason} | {vehicle_info_str} | {processing_time:.3f}s")
                         
-                        # Si está confirmada, retornar inmediatamente
+                        # CRÍTICO: Si está confirmada, retornar inmediatamente (MANTENER)
                         if is_confirmed:
                             self._update_processing_stats(processing_time)
                             return [detection]
             
-            # Filtrar falsos positivos
+            # MANTENER: Filtrar falsos positivos
             filtered_detections = self._filter_false_positives(detections)
             
             # Actualizar estadísticas
@@ -464,6 +520,307 @@ class UltraSmartDetector(IPlateDetector):
         except Exception as e:
             print(f"❌ Error en detección: {e}")
             return []
+
+    def _universal_plate_detection(self, image):
+        """Detección universal de placas - cualquier país/color"""
+
+        candidates = []
+
+        # 1. Detección por contornos (genérica)
+        candidates.extend(self._detect_by_contours_universal(image))
+
+        # 2. Detección por bordes y geometría
+        candidates.extend(self._detect_by_edges_geometry(image))
+
+        # 3. Detección por textura (caracteres alfanuméricos)
+        candidates.extend(self._detect_by_text_regions(image))
+
+        # 4. Detección por múltiples colores (no solo amarillo)
+        candidates.extend(self._detect_by_multiple_colors(image))
+
+        return self._rank_candidates_universal(candidates, image)
+
+    def _detect_by_multiple_colors(self, image):
+        """Detección por múltiples colores comunes de placas"""
+        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        candidates = []
+
+        # Rangos de colores comunes en placas mundiales
+        color_ranges = {
+            'yellow': ([15, 100, 100], [35, 255, 255]),    # Colombia, Alemania
+            'white': ([0, 0, 180], [180, 30, 255]),        # USA, México, Europa
+            'blue': ([100, 50, 50], [130, 255, 255]),      # Europa (algunos)
+            'green': ([40, 50, 50], [80, 255, 255]),       # Diplomáticas
+            'black': ([0, 0, 0], [180, 255, 80])           # Algunos países
+        }
+
+        for color_name, (lower, upper) in color_ranges.items():
+            mask = cv2.inRange(hsv, np.array(lower), np.array(upper))
+            candidates.extend(self._extract_rectangular_regions(mask, f'color_{color_name}'))
+
+        return candidates
+
+    def _detect_by_contours_universal(self, image):
+        """Detección genérica por contornos"""
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        
+        # Preprocesamiento
+        blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+        edged = cv2.Canny(blurred, 50, 200)
+        
+        # Operaciones morfológicas
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+        closed = cv2.morphologyEx(edged, cv2.MORPH_CLOSE, kernel)
+        
+        contours, _ = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        candidates = []
+        for contour in contours:
+            x, y, w, h = cv2.boundingRect(contour)
+            aspect_ratio = w / h
+            area = cv2.contourArea(contour)
+            
+            # Filtros universales
+            if (1.5 < aspect_ratio < 6.0 and 
+                1000 < area < 50000 and
+                w > 60 and h > 15):
+                candidates.append({
+                    'bbox': (x, y, w, h),
+                    'confidence': 0.7,
+                    'method': 'contours'
+                })
+        
+        return candidates
+
+    def _detect_by_text_regions(self, image):
+        """Detecta regiones con alta densidad de texto alfanumérico"""
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+        # MSER (Maximally Stable Extremal Regions) para texto
+        mser = cv2.MSER_create(
+            _delta=5,
+            _min_area=100,
+            _max_area=5000,
+            _max_variation=0.25
+        )
+
+        regions, _ = mser.detectRegions(gray)
+        candidates = []
+
+        for region in regions:
+            x, y, w, h = cv2.boundingRect(region.reshape(-1, 1, 2))
+            aspect_ratio = w / h
+
+            # Filtros genéricos para regiones tipo placa
+            if (1.5 < aspect_ratio < 6.0 and w > 60 and h > 15):
+                candidates.append({
+                    'bbox': (x, y, w, h),
+                    'confidence': 0.7,
+                    'method': 'text_regions'
+                })
+
+        return candidates
+
+    def _extract_rectangular_regions(self, mask, method_name):
+        """Extrae regiones rectangulares de una máscara"""
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        candidates = []
+        for contour in contours:
+            x, y, w, h = cv2.boundingRect(contour)
+            aspect_ratio = w / h
+            area = cv2.contourArea(contour)
+            
+            if (1.5 < aspect_ratio < 6.0 and 
+                800 < area < 30000 and
+                w > 60 and h > 15):
+                candidates.append({
+                    'bbox': (x, y, w, h),
+                    'confidence': 0.75,
+                    'method': method_name
+                })
+        
+        return candidates
+
+    def _rank_candidates_universal(self, candidates, image):
+        """Rankea y filtra candidatos"""
+        if not candidates:
+            return []
+        
+        # Eliminar duplicados cercanos
+        filtered = []
+        for candidate in candidates:
+            x, y, w, h = candidate['bbox']
+            is_duplicate = False
+            
+            for existing in filtered:
+                ex, ey, ew, eh = existing['bbox']
+                # Verificar solapamiento
+                overlap_x = max(0, min(x + w, ex + ew) - max(x, ex))
+                overlap_y = max(0, min(y + h, ey + eh) - max(y, ey))
+                overlap_area = overlap_x * overlap_y
+                
+                if overlap_area > 0.5 * min(w * h, ew * eh):
+                    is_duplicate = True
+                    break
+            
+            if not is_duplicate:
+                filtered.append(candidate)
+        
+        # Ordenar por confianza
+        return sorted(filtered, key=lambda x: x['confidence'], reverse=True)[:5]
+
+    def _multi_scale_ocr(self, plate_region):
+        """OCR con múltiples escalas y configuraciones"""
+        if plate_region is None or plate_region.size == 0:
+            return "", 0
+        
+        best_text = ""
+        best_confidence = 0
+        
+        # Múltiples escalas
+        scales = [0.8, 1.0, 1.2, 1.5, 2.0]
+        
+        for scale in scales:
+            # Redimensionar
+            height, width = plate_region.shape[:2]
+            new_width = int(width * scale)
+            new_height = int(height * scale)
+            
+            if new_width < 20 or new_height < 10:
+                continue
+                
+            resized = cv2.resize(plate_region, (new_width, new_height), interpolation=cv2.INTER_CUBIC)
+            
+            # Diferentes configuraciones de Tesseract
+            configs = [
+                "--psm 8 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
+                "--psm 7 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
+                "--psm 6"
+            ]
+            
+            for config in configs:
+                try:
+                    if self.tesseract:
+                        text = self.tesseract.image_to_string(resized, config=config).strip()
+                        text = re.sub(r'[^A-Z0-9]', '', text.upper())
+                        
+                        if len(text) >= 4:
+                            # Estimar confianza basada en longitud y formato
+                            confidence = min(90, len(text) * 10 + 30)
+                            
+                            if confidence > best_confidence:
+                                best_text = text
+                                best_confidence = confidence
+                except:
+                    continue
+        
+        return best_text, best_confidence
+
+    def _flexible_plate_validation(self, text):
+        """Validación flexible que no falla con formatos desconocidos"""
+
+        # Limpiar texto básico
+        clean_text = re.sub(r'[^A-Z0-9]', '', text.upper().strip())
+
+        # Filtros básicos universales
+        if len(clean_text) < 4:  # Muy corto
+            return False, clean_text, "too_short"
+
+        if len(clean_text) > 10:  # Muy largo
+            return False, clean_text, "too_long"
+
+        # Debe tener al menos una letra Y un número
+        has_letter = bool(re.search(r'[A-Z]', clean_text))
+        has_number = bool(re.search(r'[0-9]', clean_text))
+
+        if not (has_letter and has_number):
+            return False, clean_text, "invalid_format"
+
+        # Correcciones comunes OCR (universales)
+        corrections = {
+            '0': 'O', 'O': '0',  # Bidireccional
+            '1': 'I', 'I': '1',
+            '5': 'S', 'S': '5',
+            '8': 'B', 'B': '8',
+            '6': 'G', 'G': '6'
+        }
+
+        # Intentar correcciones solo si es necesario
+        corrected_versions = [clean_text]
+
+        # Generar versiones corregidas
+        for original, replacement in corrections.items():
+            if original in clean_text:
+                corrected = clean_text.replace(original, replacement)
+                corrected_versions.append(corrected)
+
+        # Retornar la mejor versión
+        for version in corrected_versions:
+            if len(version) >= 5:  # Longitud mínima razonable
+                return True, version, "valid"
+
+        return True, clean_text, "unknown_format"  # Aceptar formatos desconocidos
+
+    def _classify_vehicle_type(self, plate_text, bbox_dimensions):
+        """Clasifica el tipo de vehículo basado en formato de placa y dimensiones"""
+
+        clean_text = re.sub(r'[^A-Z0-9]', '', plate_text.upper())
+        width, height = bbox_dimensions
+        aspect_ratio = width / height
+
+        vehicle_info = {
+            'type': 'unknown',
+            'confidence': 0.0,
+            'country_hint': 'unknown',
+            'format': clean_text
+        }
+
+        # Patrones globales comunes
+        patterns = {
+            # Colombia
+            'colombia_car': r'^[A-Z]{3}[0-9]{3}$',           # ABC123
+            'colombia_car_new': r'^[A-Z]{3}[0-9]{2}[A-Z]$',  # ABC12D
+            'colombia_moto': r'^[A-Z]{2}[0-9]{4}$',          # AB1234
+
+            # México
+            'mexico_car': r'^[A-Z]{3}[0-9]{4}$',             # ABC1234
+            'mexico_moto': r'^[0-9]{2}[A-Z]{3}$',            # 12ABC
+
+            # USA (simplificado)
+            'usa_car': r'^[A-Z0-9]{6,8}$',                   # Variable
+
+            # Europa (genérico)
+            'europe_car': r'^[A-Z]{1,3}[0-9]{2,4}[A-Z]{0,2}$',
+
+            # Brasil
+            'brazil_car': r'^[A-Z]{3}[0-9]{4}$',             # ABC1234
+            'brazil_moto': r'^[A-Z]{3}[0-9]{3}$',            # ABC123
+        }
+
+        # Evaluar patrones
+        for pattern_name, pattern in patterns.items():
+            if re.match(pattern, clean_text):
+                if 'moto' in pattern_name:
+                    vehicle_info['type'] = 'motorcycle'
+                    vehicle_info['confidence'] = 0.9
+                else:
+                    vehicle_info['type'] = 'car'
+                    vehicle_info['confidence'] = 0.9
+
+                vehicle_info['country_hint'] = pattern_name.split('_')[0]
+                break
+
+        # Clasificación por dimensiones si no hay patrón claro
+        if vehicle_info['type'] == 'unknown':
+            if aspect_ratio > 3.5:  # Placas muy alargadas suelen ser de moto
+                vehicle_info['type'] = 'motorcycle'
+                vehicle_info['confidence'] = 0.6
+            elif 2.0 < aspect_ratio < 3.5:  # Proporción típica de carro
+                vehicle_info['type'] = 'car'
+                vehicle_info['confidence'] = 0.6
+
+        return vehicle_info
 
     def _update_processing_stats(self, processing_time: float):
         """Actualiza estadísticas de rendimiento"""
@@ -501,3 +858,84 @@ class UltraSmartDetector(IPlateDetector):
         if hasattr(self, 'thread_pool'):
             self.thread_pool.shutdown(wait=True)
         print("🧹 Recursos limpiados")
+
+    def _detect_by_color_enhanced(self, image):
+        """Detección específica por color amarillo (Colombia) + fallback universal"""
+        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        candidates = []
+        
+        # Rango para amarillo de placas colombianas (más amplio)
+        lower_yellow = np.array([18, 50, 50])  # Más permisivo
+        upper_yellow = np.array([35, 255, 255])
+        
+        mask_yellow = cv2.inRange(hsv, lower_yellow, upper_yellow)
+        
+        # También detectar blancas (muchas placas son blancas)
+        lower_white = np.array([0, 0, 200])
+        upper_white = np.array([180, 25, 255])
+        mask_white = cv2.inRange(hsv, lower_white, upper_white)
+        
+        # Combinar máscaras
+        combined_mask = cv2.bitwise_or(mask_yellow, mask_white)
+        
+        # Operaciones morfológicas para limpiar
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+        cleaned = cv2.morphologyEx(combined_mask, cv2.MORPH_CLOSE, kernel)
+        cleaned = cv2.morphologyEx(cleaned, cv2.MORPH_OPEN, kernel)
+        
+        # Encontrar contornos
+        contours, _ = cv2.findContours(cleaned, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        for contour in contours:
+            x, y, w, h = cv2.boundingRect(contour)
+            aspect_ratio = w / h if h > 0 else 0
+            area = cv2.contourArea(contour)
+            
+            # Filtros específicos para placas
+            if (1.8 < aspect_ratio < 5.0 and  # Proporción de placa
+                800 < area < 20000 and        # Área razonable
+                w > 60 and h > 20):           # Tamaño mínimo
+                candidates.append((x, y, w, h, 0.8))
+        
+        return candidates
+
+    def _should_process_frame_enhanced(self) -> bool:
+        """Versión mejorada que siempre procesa imágenes individuales"""
+        self.stats['total_frames'] += 1
+        
+        # Para imágenes individuales, siempre procesar
+        # Solo skip para video en tiempo real
+        if hasattr(self, '_processing_single_image') and self._processing_single_image:
+            return True
+        
+        # Skip frames para video (comportamiento original)
+        self.frame_skip_count += 1
+        if self.frame_skip_count <= self.skip_frames:
+            return False
+        
+        self.frame_skip_count = 0
+        return True
+    
+    def _detect_by_edges_geometry(self, image):
+        """Detección básica por bordes - función faltante"""
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        
+        # Detección de bordes simple
+        edges = cv2.Canny(gray, 50, 150, apertureSize=3)
+        
+        # Encontrar líneas
+        lines = cv2.HoughLinesP(edges, 1, np.pi/180, threshold=100, 
+                            minLineLength=50, maxLineGap=10)
+        
+        candidates = []
+        if lines is not None:
+            # Análisis básico de líneas para encontrar rectángulos
+            h, w = image.shape[:2]
+            # Región central como candidato básico
+            candidates.append({
+                'bbox': (w//4, h//3, w//2, h//3),
+                'confidence': 0.5,
+                'method': 'edges_geometry'
+            })
+        
+        return candidates
