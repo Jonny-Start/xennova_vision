@@ -11,3 +11,4 @@ numpy>=1.24.0
 pyyaml>=6.0
 pytesseract>=0.3.10
 tensorflow>=2.14.0
+easyocr>=1.7.0

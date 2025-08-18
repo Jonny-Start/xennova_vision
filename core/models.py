@@ -13,15 +13,22 @@ class PlateDetection:
     plate_number: str
     confidence: float
     bbox: Optional[Tuple[int, int, int, int]] = None  # (x1, y1, x2, y2)
-    
+
+    # NUEVOS CAMPOS - AGREGAR AL FINAL CON VALORES POR DEFECTO
+    vehicle_type: str = "unknown"
+    vehicle_confidence: float = 0.0
+    country_hint: str = "unknown"
+    validation_status: str = "unknown"
+    detection_method: str = "unknown"
+
     def __post_init__(self):
         """Validación post-inicialización"""
         if not self.plate_number:
             raise ValueError("El número de placa no puede estar vacío")
-        
+
         if not (0.0 <= self.confidence <= 1.0):
             raise ValueError("La confianza debe estar entre 0.0 y 1.0")
-        
+
         # Limpiar número de placa
         self.plate_number = self.plate_number.upper().strip()
 
