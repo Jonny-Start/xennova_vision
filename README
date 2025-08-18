@@ -13,7 +13,7 @@
 # source venv/bin/activate
 # pip install -r ./requirements/desktop.txt
 # python main.py --continuous
-
+# python main.py --image img/test/testPlaca.jpg --debug
 
 # python main.py --continuous --window  # Modo continuo con ventana
 # python main.py --image imagen.jpg     # Procesar imagen específica
