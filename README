@@ -1,13 +1,12 @@
+│ XENNOVA VISION ALPR SYSTEM │
+
 # INSTRUCCIONES DE INSTALACIÓN
 
-# pip3 install -r requirements.txtbrew install python3
-# python3 -m ensurepip --upgrade
-# python3 main.py --continuous
-
+# INSTRUCCIONES PARA SISTEMAS EMBEBIDOS (Raspberry Pi, Jetson, etc.)
 
 # python3 -m venv venv
 # source venv/bin/activate
-# pip install -r requirements.txt
+# pip install -r ./requirements/desktop.txt
 # python main.py --continuous
 
 
