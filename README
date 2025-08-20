@@ -148,3 +148,55 @@ chmod +x cleanup_unused_files.sh
 
 # Windows
 python cleanup_unused_files.py
+
+
+
+
+# 1. Instalar Python 3.13 via Homebrew (más confiable)
+brew install python@3.13
+
+# 2. Verificar instalación
+/opt/homebrew/bin/python3.13 --version
+
+# 3. Crear venv con Python 3.13
+/opt/homebrew/bin/python3.13 -m venv venv
+source venv/bin/activate
+
+# 4. Verificar LZMA + versión
+python --version
+python -c "import lzma; print('✅ LZMA OK')"
+
+
+
+# 1. Crear venv nuevo
+rm -rf venv
+/opt/homebrew/bin/python3.13 -m venv venv
+source venv/bin/activate
+
+# 2. Verificar versión y LZMA
+python --version
+python -c "import lzma; print('✅ LZMA OK')"
+
+# 3. Actualizar pip
+pip install --upgrade pip setuptools wheel
+
+# 4. Core dependencies (PASO A PASO para evitar conflictos)
+pip install "numpy>=1.24.0,<2.0.0"
+pip install "opencv-python>=4.9.0"
+pip install "requests>=2.31.0" "psutil>=5.9.0" "pillow>=10.0.0" "pyyaml>=6.0.0"
+
+# 5. OCR engines
+pip install "pytesseract>=0.3.13"
+
+# 6. Verificar CORE
+python -c "import cv2, numpy, requests, yaml; print('✅ CORE OK')"
+
+# 7. Deep Learning (YOLO) - CPU optimizado
+pip install "torch>=2.1.0" "torchvision>=0.16.0" --index-url https://download.pytorch.org/whl/cpu
+pip install "ultralytics>=8.0.0"
+
+# 8. EasyOCR (último paso)
+pip install "easyocr>=1.7.0"
+
+# 9. VERIFICAR TODO
+python -c "import torch, ultralytics, easyocr; print('✅ YOLO + EasyOCR OK')"
